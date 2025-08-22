@@ -7,11 +7,12 @@ function ChatWindow() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // Add user message
-    setMessages([...messages, { sender: "user", text: input }]);
+    // Add user message to chat
+    const newMessage = { text: input, sender: "user" };
+    setMessages((prev) => [...prev, newMessage]);
 
     try {
-      // Call backend API (FastAPI running on localhost:8000)
+      // Send message to backend
       const response = await fetch("http://127.0.0.1:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -20,54 +21,47 @@ function ChatWindow() {
 
       const data = await response.json();
 
-      // Add bot response
-      setMessages((prev) => [...prev, { sender: "bot", text: data.reply }]);
+      // Add bot response to chat
+      const botMessage = { text: data.reply, sender: "bot" };
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        { sender: "bot", text: "Error connecting to backend" },
-      ]);
+      console.error("Error:", error);
+      const errorMessage = { text: "⚠️ Backend not responding", sender: "bot" };
+      setMessages((prev) => [...prev, errorMessage]);
     }
 
-    setInput(""); // clear input
+    setInput(""); // Clear input
   };
 
   return (
-    <div style={{ width: "400px", margin: "20px auto", textAlign: "center" }}>
-      <div
-        style={{
-          border: "1px solid #ccc",
-          padding: "10px",
-          height: "300px",
-          overflowY: "auto",
-          marginBottom: "10px",
-          background: "#f9f9f9",
-        }}
-      >
-        {messages.map((msg, index) => (
+    <div className="flex flex-col h-screen p-4">
+      <div className="flex-1 overflow-y-auto border rounded p-2">
+        {messages.map((msg, i) => (
           <div
-            key={index}
-            style={{
-              textAlign: msg.sender === "user" ? "right" : "left",
-              margin: "5px 0",
-            }}
+            key={i}
+            className={`p-2 my-1 rounded ${
+              msg.sender === "user" ? "bg-blue-200 text-right" : "bg-gray-200"
+            }`}
           >
-            <strong>{msg.sender}:</strong> {msg.text}
+            {msg.text}
           </div>
         ))}
       </div>
 
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-        placeholder="Type a message..."
-        style={{ width: "70%", padding: "8px" }}
-      />
-      <button onClick={sendMessage} style={{ padding: "8px 12px" }}>
-        Send
-      </button>
+      <div className="flex mt-2">
+        <input
+          className="flex-1 border rounded p-2"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+        />
+        <button
+          onClick={sendMessage}
+          className="ml-2 px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          Send
+        </button>
+      </div>
     </div>
   );
 }
